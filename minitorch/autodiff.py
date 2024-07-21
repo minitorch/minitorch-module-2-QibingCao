@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, Tuple, Dict
+from typing import Any, Iterable, Tuple, Dict, Deque
 from collections import deque
 
 from typing_extensions import Protocol
@@ -74,7 +74,7 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     indegree_table = {}
     visited = set()
 
-    def dfs(var: Variable):
+    def dfs(var: Variable) -> None:
         if var.unique_id not in visited:
             visited.add(var.unique_id)
             for _parent in var.parents:
@@ -87,7 +87,7 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
 
     dfs(variable)
 
-    dq = deque()
+    dq: Deque[Variable] = deque()
     dq.append(variable)
     while dq:
         cur = dq.popleft()
