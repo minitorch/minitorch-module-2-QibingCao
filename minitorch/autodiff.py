@@ -71,29 +71,36 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     """
 
     sorted_variables = []
+    indegree_table = {}
     visited = set()
 
-    def bfs(start_variable: Variable) -> None:
-        dq = deque([start_variable])
+    def dfs(var: Variable):
+        if var.unique_id not in visited:
+            visited.add(var.unique_id)
+            for _parent in var.parents:
+                if not _parent.is_leaf() and not _parent.is_constant():
+                    if _parent.unique_id not in indegree_table:
+                        indegree_table[_parent.unique_id] = 1
+                    else:
+                        indegree_table[_parent.unique_id] += 1
+                    dfs(_parent)
 
-        while dq:
-            cur = dq.popleft()
+    dfs(variable)
 
-            if cur.unique_id in visited:
-                continue
-
-            visited.add(cur.unique_id)
-            sorted_variables.append(cur)
-
-            for parent in cur.parents:
-                if (
-                    not parent.is_leaf()
-                    and not parent.is_constant()
-                    and parent.unique_id not in visited
-                ):
+    dq = deque()
+    dq.append(variable)
+    while dq:
+        cur = dq.popleft()
+        sorted_variables.append(cur)
+        for parent in cur.parents:
+            if parent.unique_id in indegree_table:
+                parent_indegree = indegree_table[parent.unique_id]
+                assert parent_indegree >= 1
+                if parent_indegree > 1:
+                    indegree_table[parent.unique_id] -= 1
+                else:
+                    indegree_table.pop(parent.unique_id)
                     dq.append(parent)
-
-    bfs(variable)
 
     # for item in sorted_variables:
     #     print("\n")
