@@ -67,6 +67,15 @@ def sigmoid(x: float) -> float:
     return 1.0 / (1.0 + exp(-x)) if x >= 0.0 else exp(x) / (1.0 + exp(x))
 
 
+def sigmoid_back(x: float, d_output: float) -> float:
+    fx = (
+        1.0 / (1.0 + math.exp(-x))
+        if x >= 0.0
+        else math.exp(x) / (1.0 + math.exp(x))
+    )
+    return fx * (1 - fx) * d_output
+
+
 def relu(x: float) -> float:
     """
     $f(x) =$ x if x is greater than 0, else 0
@@ -96,17 +105,17 @@ def log_back(x: float, d: float) -> float:
 
 def inv(x: float) -> float:
     "$f(x) = 1/x$"
-    return 1 / x
+    return 1.0 / x
 
 
 def inv_back(x: float, d: float) -> float:
     r"If $f(x) = 1/x$ compute $d \times f'(x)$"
-    return -1 / (x * x)
+    return -1.0 / (x * x)
 
 
 def relu_back(x: float, d: float) -> float:
     r"If $f = relu$ compute $d \times f'(x)$"
-    return d if x > 0 else 0
+    return d if x > 0.0 else 0.0
 
 
 # ## Task 0.3
@@ -143,7 +152,7 @@ def negList(ls: Iterable[float]) -> Iterable[float]:
 
 
 def zipWith(
-    fn: Callable[[float, float], float]
+        fn: Callable[[float, float], float]
 ) -> Callable[[Iterable[float], Iterable[float]], Iterable[float]]:
     """
     Higher-order zipwith (or map2).
@@ -174,7 +183,7 @@ def addLists(ls1: Iterable[float], ls2: Iterable[float]) -> Iterable[float]:
 
 
 def reduce(
-    fn: Callable[[float, float], float], start: float
+        fn: Callable[[float, float], float], start: float
 ) -> Callable[[Iterable[float]], float]:
     r"""
     Higher-order reduce.
