@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Tuple
+from typing import Any, Iterable, Tuple, Dict, Deque
+from collections import deque
 
 from typing_extensions import Protocol
+
 
 # ## Task 1.1
 # Central Difference calculation
@@ -22,7 +24,14 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    vals_list = list(vals)  # 将元组转换为列表
+    vals_list[arg] -= epsilon
+    f_minus = f(*vals_list)
+
+    vals_list[arg] += 2 * epsilon
+    f_plus = f(*vals_list)
+
+    return (f_plus - f_minus) / (2 * epsilon)
 
 
 variable_count = 1
@@ -60,7 +69,45 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+
+    sorted_variables = []
+    indegree_table = {}
+    visited = set()
+
+    def dfs(var: Variable) -> None:
+        if var.unique_id not in visited:
+            visited.add(var.unique_id)
+            for _parent in var.parents:
+                if not _parent.is_leaf() and not _parent.is_constant():
+                    if _parent.unique_id not in indegree_table:
+                        indegree_table[_parent.unique_id] = 1
+                    else:
+                        indegree_table[_parent.unique_id] += 1
+                    dfs(_parent)
+
+    dfs(variable)
+
+    dq: Deque[Variable] = deque()
+    dq.append(variable)
+    while dq:
+        cur = dq.popleft()
+        sorted_variables.append(cur)
+        for parent in cur.parents:
+            if parent.unique_id in indegree_table:
+                parent_indegree = indegree_table[parent.unique_id]
+                assert parent_indegree >= 1
+                if parent_indegree > 1:
+                    indegree_table[parent.unique_id] -= 1
+                else:
+                    indegree_table.pop(parent.unique_id)
+                    dq.append(parent)
+
+    # for item in sorted_variables:
+    #     print("\n")
+    #     print(item)
+    #     print(item.parents)
+    #     print("\n")
+    return sorted_variables
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -74,7 +121,22 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    sorted_variables = topological_sort(variable)
+    derive_table: Dict[int, float] = {variable.unique_id: deriv}
+
+    def back_helper(vari: Variable) -> None:
+        d_output = derive_table[vari.unique_id]
+        parents_derive = cur_variable.chain_rule(d_output)
+        for parent, derivative in parents_derive:
+            if parent.is_leaf():
+                parent.accumulate_derivative(derivative)
+            else:
+                if parent.unique_id not in derive_table:
+                    derive_table[parent.unique_id] = 0.0
+                derive_table[parent.unique_id] += derivative
+
+    for cur_variable in sorted_variables:
+        back_helper(cur_variable)
 
 
 @dataclass

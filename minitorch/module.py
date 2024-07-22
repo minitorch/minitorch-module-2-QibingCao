@@ -31,11 +31,21 @@ class Module:
 
     def train(self) -> None:
         "Set the mode of this module and all descendent modules to `train`."
-        raise NotImplementedError("Need to include this file from past assignment.")
+        self.training = True
+        for module in self._modules.values():
+            module.train()
 
     def eval(self) -> None:
         "Set the mode of this module and all descendent modules to `eval`."
-        raise NotImplementedError("Need to include this file from past assignment.")
+        self.training = False
+        for module in self._modules.values():
+            module.eval()
+
+    def forward(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        The forward method that should be overridden by all subclasses.
+        """
+        raise NotImplementedError("Forward method not implemented")
 
     def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
         """
@@ -45,11 +55,33 @@ class Module:
         Returns:
             The name and `Parameter` of each ancestor parameter.
         """
-        raise NotImplementedError("Need to include this file from past assignment.")
+
+        def named_helper(
+            cur: Module, ancestor_name: str
+        ) -> Sequence[Tuple[str, Parameter]]:
+            parameters = []
+            for name, para in cur._parameters.items():
+                new_name = ancestor_name + "." + name if ancestor_name else name
+                parameters.append((new_name, para))
+
+            for child_name, child_module in cur._modules.items():
+                new_child_name = (
+                    ancestor_name + "." + child_name if ancestor_name else child_name
+                )
+                parameters.extend(named_helper(child_module, new_child_name))
+            # print(parameters)
+            return parameters
+
+        return named_helper(self, "")
 
     def parameters(self) -> Sequence[Parameter]:
         "Enumerate over all the parameters of this module and its descendents."
-        raise NotImplementedError("Need to include this file from past assignment.")
+
+        parameters: list[Parameter] = []
+        parameters.extend(self._parameters.values())
+        for module in self._modules.values():
+            parameters.extend(module.parameters())
+        return parameters
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """
@@ -115,9 +147,9 @@ class Module:
 
 class Parameter:
     """
-    A Parameter is a special container stored in a `Module`.
+    A Parameter is a special container stored in a :class:`Module`.
 
-    It is designed to hold a `Variable`, but we allow it to hold
+    It is designed to hold a :class:`Variable`, but we allow it to hold
     any value for testing.
     """
 
